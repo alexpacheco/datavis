@@ -11,16 +11,15 @@ widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
 mode        : selfcontained # {standalone, draft}
 knit        : slidify::knit2slides
 license     : by-sa
----  .lehigh
+---  .class #id
 
 ## Read-And-Delete
 
 1. Edit YAML front matter
 2. Write using R Markdown
 3. Use an empty line followed by three dashes to separate slides!
-   * To use my template using Lehigh's  colors use "---  .lehigh" instead. 
 
---- .lehigh
+--- .class #id
 
 ## My modification to the css formatting
 
@@ -28,7 +27,7 @@ license     : by-sa
 2. Each column should be preceeded with "*** =alignment width:x%"
     * For e.g. "*** =left width:30%" and "*** =right width:70%" will create two columns with 30:70 ration between left and right columns
 
---- .lehigh
+--- .class #id
 
 ## Creating presentations using Slidify
 
@@ -63,7 +62,7 @@ install_git('https://github.com/ramnathv/slidifyLibraries.git')
 library(slidify)
 ```
 
---- .lehigh
+--- .class #id
 
 ## Creating presentations using Slidify (contd)
 
@@ -88,7 +87,7 @@ browserURL('index.html')
 ```
 
 
---- .lehigh
+--- .class #id
 
 
 ## Slide 3
