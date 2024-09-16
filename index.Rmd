@@ -1,6 +1,5 @@
 ---
-title       : Slidify Template 
-subtitle    : Using Lehigh colors
+title       : Data Visualization with R and Python
 author      : Alex Pacheco
 job         : LTS Research Computing
 logo        : lu.png
@@ -13,79 +12,1194 @@ knit        : slidify::knit2slides
 license     : by-sa
 ---  .class #id
 
-## Read-And-Delete
 
-1. Edit YAML front matter
-2. Write using R Markdown
-3. Use an empty line followed by three dashes to separate slides!
+## Outline
 
---- .class #id
+* What is Data Visualization?
+* R Graphics
+   * ```ggplot2```
+* Python Graphics
+   * ```matplotlib```
 
-## My modification to the css formatting
 
-1. To use two columns , use add "&twocol_width to the slide separator"
-2. Each column should be preceeded with "*** =alignment width:x%"
-    * For e.g. "*** =left width:30%" and "*** =right width:70%" will create two columns with 30:70 ration between left and right columns
+--- .class
 
---- .class #id
+## ggplot2 Package
 
-## Creating presentations using Slidify
 
-* Install the `devtools` package and load it
+- "gg" stands for Grammar-of-Graphics
+- The idea is that any data graphics can be described by specifying
+    - A dataset
+    - Visual marks that represent data points
+    - A coordination system
+- ```ggplot2``` package in R is an implementation of it
+    - Versatile
+    - Clear and consistent interface
+    - Beautiful output
 
-```{r eval=FALSE}
-install.packages('devtools')
-library(devtools)
+--- .class
+
+## Datasets Used
+
+* Most examples here are based on standard datasets available as R packages
+
+```{r echo=F,warnings=F}
+packagelist <- c("tidyverse","devtools","lubridate","plotly","gcookbook","datasets","maps")
+
+for (i in seq(1,length(packagelist))) {
+  if ( !require(packagelist[i] )) install.packages( packagelist[i] )
+}
+
 ```
 
-* Install the `slidify` and `slidifyLibraries` package from github
+* Whereever available, we will use data for Sol used for the R Programming tutorial
 
-```{r eval=FALSE}
-install_github('ramnathv/slidify')
-install_github('ramnathv/slidifyLibraries')
-```
+--- .class
 
-* if you get an error, try 
+## Recap Example for R Programming Tutorial
 
-```{r eval=FALSE}
-install_git('https://github.com/ramnathv/slidify.git') 
-install_git('https://github.com/ramnathv/slidifyLibraries.git')
-```
-
-* Load the slidify library
-
-```{r eval=FALSE}
-library(slidify)
-```
-
---- .class #id
-
-## Creating presentations using Slidify (contd)
-
-* Create a Slide desk
-```{r eval=FALSE}
-author("myslides")
-```
-
-* This will create a folder called `myslides` with files and subdirectories to create your presentation
-   - `assets/css/custom.css`: Create your own custom css
-   - `assets/layouts/`: Don't like the default layouts, create your own in this directory
-   - `libraries`: files that slidify create. Do not edit the files, copy the file to the `assets` directory and modify it.
-* To edit your presentation, edit the `index.Rmd` file using [R Markdown](http://rmarkdown.rstudio.com/)
-* To create slides, in the R console run the command
-
-```{r eval=FALSE}
-slidify('index.Rmd')``
-# View the presentation in a web browser
-browserURL('index.html')
+```{r}
+suppressWarnings(suppressMessages(library(tidyverse)))
+suppressWarnings(suppressMessages(library(lubridate)))
+daily <- read_delim('http://webapps.lehigh.edu/hpc/training/soldaily1617-public.csv',delim=";")
+ay1617su <- c(580320.00,561600.00,580320.00,580320.00,524160.00,580320.00,699840.00,955296.00,924480.00,955296.00,955296.00,924480.00)
 ```
 
 
---- .class #id
 
 
-## Slide 3
+--- .class &twocol_width
+
+## Basic Concepts of ggplot2
 
 
-* Do a Google search for `slidify` to learn more and/or see example slides.
+*** =left width:35%
+
+Grammar of Graphics components:
+
+- Data: Use the ```ggplot``` function to indicate what data to use
+- Visual marks: Use ```geom_xxx``` functions to indicate what types of visual marks to use
+    - Points, lines, area, etc.
+- Mapping: Use aesthetic properties (```aes()``` function) to map variables to visual marks
+    - Color, shape, size, x, y, etc.
+
+
+*** =right width:60%
+
+```{r fig.width=6,fig.height=4}
+ggplot(heightweight, # What data to use
+       aes(x=weightLb,y=heightIn)) + # Aesthetic specifies variables
+  geom_point() # Geom specifies visual marks 
+```
+
+--- .class  &twocol
+
+## Histogram & Contours
+
+*** =left
+
+```{r fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=hwy)) + 
+  geom_histogram(binwidth=5, fill="white", color="black")
+```
+
+*** =right
+
+```{r fig.width=6,fig.height=4}
+ggplot(faithfuld, aes(waiting, eruptions, z = density))+
+  geom_raster(aes(fill = density)) +
+  geom_contour(colour = "white")
+```
+
+--- .class &twocol
+
+## Bar Charts
+
+*** =left
+
+```{r fig.width=6,fig.height=4}
+monthly <- daily %>% 
+  group_by(Month=floor_date(as.Date(Day), "month"),
+    Name,Department,PI,PIDept,Status) %>% 
+  summarize(Serial=sum(as.double(Serial)),Single=sum(as.double(Single)),
+    Multi=sum(as.double(Multi)),Total=sum(as.double(Total)),
+    SerialJ=sum(as.double(SerialJ)),SingleJ=sum(as.double(SingleJ)),
+    MultiJ=sum(as.double(MultiJ)),TotalJ=sum(as.double(TotalJ))) 
+monthly %>%
+  group_by(Month) %>%	
+  summarize(Total=round(sum(as.double(Total)),2), 
+    Jobs=round(sum(as.double(TotalJ)))) %>%
+  mutate(Available=ay1617su,Unused=Available-Total,
+    Percent=round(Total/Available*100,2)) 
+```
+
+*** =right
+
+```{r fig.width=6,fig.height=4}
+monthly %>%
+  group_by(Month) %>%	
+  summarize(Total=round(sum(as.double(Total)),2), Jobs=round(sum(as.double(TotalJ)))) %>%
+  mutate(Available=ay1617su,Unused=Available-Total,
+    Percent=round(Total/Available*100,2)) %>%
+  ggplot(aes(Month,Percent)) + geom_col()
+```
+
+
+--- .class 
+
+## Maps with ggplot2 
+
+
+- Combined with the ```maps``` package, one can create geographical graphs
+
+```{r fig.width=6,fig.height=4}
+states <- map_data("state")
+midatl <- subset(states, region %in% c("pennsylvania", "new york", "new jersey"))
+
+ggplot(midatl, aes(x=long,y=lat,group=group, fill=region)) +
+  geom_polygon(color="black") +
+  scale_fill_brewer(palette="Set2") 
+```
+
+--- .class &twocol
+
+## List of Geoms in ggplot2
+
+*** =left
+
+There are more than 30 geoms in ggplot2:
+
+- One variable
+    - geom_bar
+    - geom_col
+    - geom_area
+- Two variables
+    - geom_point
+    - geom_smooth
+    - geom_text
+    - geom_boxplot
+
+
+*** =right
+
+- Graphic primitives
+    - geom_path
+    - geom_polygon
+- Error visualizatoin
+    - geom_errorbar
+- Special
+    - geom_map
+    - geom_contour
+
+
+--- .class &twocol
+
+## Customizing Appearance of Data Points
+
+*** =left
+
+- Appearance of Data Points can be customized with the ```geom``` functions
+    - Color
+    - Shape (symbol)
+    - Size
+    - Alpha (transparency)
+
+*** =right
+
+```{r}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(shape=2,size=5,color='red',alpha=0.5)
+```
+
+```{r interactive_point_shape,cache=FALSE,eval=FALSE,echo=FALSE}
+
+shinyApp(
+  ui = fluidPage(
+    theme = shinytheme("readable"),
+    sidebarLayout(
+      sidebarPanel(
+    sliderInput("shape",
+                label = "Point shape",
+                min = 0,
+                max = 24,
+                value = 2)
+    ),
+      mainPanel(plotOutput("xyPlot",height = "500px"))
+    )
+  ),
+  server = function(input, output) {
+    output$xyPlot <- renderPlot(
+      ggplot(heightweight, aes(x=weightLb,y=heightIn)) + geom_point(shape=input$shape,size=5,color='red',alpha=0.5)
+    )
+  },
+  options = list(width=800, height=600)
+)
+
+```
+
+
+--- .class
+
+
+## Notes on Colors
+
+- A list of possible color names can be obtained with the function ```colors()```
+- Can also use hex values
+    - Starts with a "#", e.g. "#FFFFFF" 
+
+```{r colors}
+colors()
+```
+
+--- .class
+
+## Adding More Layers to A Plot
+
+- New layers can be added to a plot by using ```geom_xxx``` functions
+
+```{r multiple_geoms, warning=FALSE, error=FALSE,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point() + 
+  geom_quantile(quantiles = c(0.25,0.5,0.75)) +
+  geom_text(label=rownames(heightweight), vjust=-0.5)
+```
+
+--- .class
+
+## More on Aesthetic Mapping
+
+- Aesthetic mappings describe how variables in the data are mapped to visual properties
+    - Colors, shapes, sizes, transparency etc.
+    - Controlled by the ```aes()``` function
+    - Can be specified in either ``ggplot`` function or individual layers
+        - Aesthetic mappings specified in ```ggplot``` are default, but can be overriden in individual layers
+
+--- .class &twocol
+
+## Mapping Discrete Variables to Aesthetic Properties
+
+*** =left
+
+- Discrete data values can be mapped to an aesthetic value to group data points
+
+```{r group_by_sex,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(aes(shape=sex,color=sex))
+```
+
+*** =right
+
+Specify the shapes and colors manually:
+```{r manual_shape_color,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(aes(shape=sex,color=sex),size=4) +
+  scale_shape_manual(values=c(1,4)) +
+  scale_color_manual(values=c("blue","green"))
+```
+
+--- .class &twocol
+
+## Mapping Continuous variables to Aesthetic Properties
+
+- Continuous variables can be mapped to aesthetic values too
+
+```{r aes_continuous,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(aes(shape=sex,color=sex,size=ageYear))
+```
+
+--- .class &twocol
+
+## Adding Fitted Models
+
+*** =left
+
+* Use ```stat_smooth``` function to add a fitted model to the plot:
+
+```{r fitted_model,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(aes(shape=sex,color=sex),size=4) +
+  scale_shape_manual(values=c(1,4)) +
+  scale_color_manual(values=c("blue","green")) +
+  stat_smooth(method = lm, level=0.95)
+```
+
+*** =right
+
+* Moving the ```color=sex``` statement to the ```ggplot``` function produces two lines:
+
+```{r fitted_model_two_lines,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn, color=sex)) + 
+  geom_point(aes(shape=sex),size=4) +
+  scale_shape_manual(values=c(1,4)) +
+  scale_color_manual(values=c("blue","green")) +
+  stat_smooth(method = lm, level=0.95)
+```
+
+--- .class &twocol
+
+## Labeling individual points
+
+*** =left
+
+To label data points, use either ```annotate``` or ```geom_text```
+
+```{r label_annotate,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(aes(shape=sex,color=sex,size=ageYear)) +
+  annotate("text",x=150,y=68,label="Some label",color="darkgreen",size=12)
+```
+
+*** =right
+
+```{r label_geom_text,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn)) + 
+  geom_point(aes(shape=sex,color=sex,size=ageYear)) +
+  geom_text(aes(label=ageYear),vjust=0.5)
+```
+
+--- .class &twocol
+
+## Stat Functions
+
+*** =left
+
+- Some plots visualize a transformation of the original dataset.
+- Use a ```stat_xxx``` function to choose a common transformation to visualize.
+
+
+*** =right
+
+We have seen the ```stat_smooth()``` function:
+```{r stat_smooth,fig.width=6,fig.height=4}
+ggplot(heightweight, aes(x=weightLb,y=heightIn, color=sex)) + 
+  geom_point(aes(shape=sex),size=4) +
+  scale_shape_manual(values=c(1,4)) +
+  scale_color_manual(values=c("blue","green")) +
+  stat_smooth(method = lm, level=0.95)
+```
+
+--- .class &twocol
+
+## Stat Functions
+
+*** =left
+
+Another example: ```stat_bin()``` function creates a frequency count:
+```{r stat_bin,fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=hwy)) + stat_bin(binwidth = 5)
+```
+
+
+*** =right
+
+This is equivalent to:
+```{r stat_bin_equivalent, eval=F,fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=hwy)) + geom_bar(binwidth = 5)
+```
+
+Or:
+
+```{r stat_bin_equivalent_2, eval=F,fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=hwy)) + 
+  geom_bar(stat="bin", binwidth = 5) 
+# The "bin" stat is the implied default for histogram
+```
+
+--- .class
+
+## Stat Functions
+
+* If you data being plotted is not numeric, then use ```stat_count``` instead
+
+```{r stat_count, fig.width=6,fig.height=4}
+daily %>% 
+  group_by(Name,Status) %>% 
+  summarize(Total=round(sum(as.double(Total)),2)) %>% 
+  filter(Total>0) -> usage_status
+ggplot(usage_status,aes(x=Status)) + stat_count(width=1)
+
+``` 
+
+--- .class &twocol
+
+## Stat Functions
+
+*** =left
+
+Density plot with ```stat_density```:
+```{r stat_density,fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=hwy)) + stat_density()
+```
+
+
+*** =right
+
+Or the same plot with ```geom_bar```:
+```{r geom_bar,fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=hwy)) + geom_bar(stat="density")
+```
+
+--- .class &twocol
+
+## Saving Plot to An Object
+
+*** =left
+
+- A ```ggplot``` plot can be saved in an object
+- More convenient when you are experienting with different geoms and their options
+
+```{r save_in_object,fig.width=6,fig.height=4}
+p <- ggplot(heightweight, aes(x=weightLb,y=heightIn))
+p + geom_point(aes(shape=sex,color=sex,size=ageYear))
+```
+
+
+*** =right
+
+```{r reuse_object,fig.width=6,fig.height=4}
+# Here we use the saved plot object "p", but a different geom
+p + geom_smooth(method=lm)
+```
+
+--- .class 
+
+## Saving Plots to Files
+
+
+With ```ggplot2``` one can use the ```ggsave()``` function to save a plot:
+```{r ggsave, echo=T, results=F, fig.keep='none'}
+ggplot(heightweight, aes(x=weightLb,y=heightIn, color=sex)) + 
+  geom_point(aes(shape=sex),size=4) +
+  scale_shape_manual(values=c(1,4)) +
+  scale_color_manual(values=c("blue","green")) +
+  stat_smooth(method = lm, level=0.99)
+ggsave("hw.png",width=6,height=6)
+```
+
+
+<figure>
+  <img src="hw.png" alt="Saving Plots to Files" width="360" height="360">
+</figure>
+
+--- .class
+
+## Plot Titles
+
+
+* To add a title, use either ```ggtitle``` or ```labs(title=)```
+   * Note the title is left-aligned by default.
+
+```{r ggtitle,fig.width=6,fig.height=4}
+monthlyusage <- monthly %>%
+  group_by(Month) %>%	
+  summarize(Total=round(sum(as.double(Total)),2), Jobs=round(sum(as.double(TotalJ)))) %>%
+  mutate(Available=ay1617su,Unused=Available-Total,
+    Percent=round(Total/Available*100,2)) %>%
+  ggplot(aes(Month,Percent)) + geom_col()
+monthlyusage + ggtitle("Sol Usage")
+```
+
+
+--- .class
+
+## Axis Labels
+
+- To add axis labels, use either
+    - ```xlab``` and ```ylab```, or
+    - ```labs(x=,y=)```
+
+```{r xylabel,fig.width=6,fig.height=4}
+p + ggtitle("Sol Usage") +
+  xlab("Month") + ylab("% Used")
+```
+
+--- .class
+
+## Legend Titles
+
+- Use ```labs(<aes>=)``` to specify legend titles
+
+```{r legend_title,fig.width=6,fig.height=4}
+p + ggtitle("Height ~ weight of school children") +
+  xlab("Weight (lbs)") + ylab("Height (inch)") +
+  labs(color='Gender', shape='Gender')
+```
+
+--- .class &twocol
+
+## Legends
+
+- Use the ```guides``` function to set legend type for each aesthetic properties.
+
+*** =left
+
+Before:
+```{r before_guide,fig.width=6,fig.height=4}
+p <- ggplot(heightweight, aes(x=weightLb,y=heightIn,color=ageYear)) + 
+  geom_point(aes(shape=sex)) 
+p
+```
+
+*** =right
+
+After:
+```{r after_guide,fig.width=6,fig.height=4}
+p + guides(shape='none',color='legend')
+```
+
+---.class
+
+## Themes
+
+- Themes decide the appearance of a plot
+- ```ggplot2``` provides a few pre-defined themes for users to choose from
+
+To use the ```classic``` theme:
+```{r classic_them, fig.width=6,fig.height=4}
+p <- ggplot(heightweight, aes(x=weightLb,y=heightIn, color=sex)) + 
+  geom_point(aes(shape=sex),size=4)
+p + theme_classic()
+```
+
+
+```{r interactive_theme,cache=FALSE,
+echo=FALSE,fig.width=6,fig.height=4,eval=FALSE}
+p <- ggplot(heightweight, aes(x=weightLb,y=heightIn, color=sex)) + 
+  geom_point(aes(shape=sex),size=4)
+plotType <- function(type) {
+  switch(type,
+         theme_classic = p + theme_classic(),
+         theme_bw = p + theme_bw(),
+         theme_dark = p + theme_dark(),
+         theme_gray = p + theme_gray(),
+         theme_light = p + theme_light(),
+         theme_minimal = p + theme_minimal()
+  )
+}
+shinyApp(
+  ui = fluidPage(
+    theme = shinytheme("readable"),
+    selectInput("plottheme",
+                label = "Plot Theme",
+                choices = c("theme_classic","theme_bw","theme_dark","theme_gray","theme_light","theme_minimal"),
+                selected = "theme_classic"),
+      plotOutput("xyPlot", height = "500px")
+  ),
+  server = function(input, output) {
+    
+    output$xyPlot <- renderPlot(
+      plotType(input$plottheme)
+    )
+  },
+    options = list(width=800, height=600)
+)
+```
+
+---.class
+
+## Package ggthemes
+
+
+```{r ggthemes, echo=F}
+library(ggthemes)
+```
+
+- Additional themes are available from the ```ggthemes``` package
+
+Example: Excel theme
+```{r excel_theme, fig.width=6,fig.height=4}
+p + theme_excel()
+```
+
+---.class &twocol
+
+## Fine-tuning the Theme
+
+*** =left
+
+- Most elements related to appearance are controlled by the ```theme()``` function.
+    - Fonts (family, size, color etc.)
+    - Background color
+    - Grid lines
+    - Axis ticks
+
+*** =right
+
+Example: removing the grid lines
+```{r remove_grid_line, fig.width=6,fig.height=4}
+p + theme_bw() +
+  theme(panel.grid = element_blank())
+```
+
+---.class &twocol
+
+## Fine-tuning the Theme
+
+*** =left
+
+- Most elements related to appearance are controlled by the ```theme()``` function.
+    - Fonts (family, size, color etc.)
+    - Background color
+    - Grid lines
+    - Axis ticks
+
+*** =right
+
+Or just removing the vertical ones:
+```{r fig.width=6,fig.height=4}
+p + theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+---.class &twocol
+
+## Customizing Fonts
+
+
+*** =left
+
+Change the base size and font family:
+
+```{r windows_font, echo=F, fig.width=6,fig.height=4}
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+```
+
+```{r customize_fonts, fig.width=6,fig.height=4}
+
+p + theme_bw(base_size = 24, base_family = "Times")
+```
+
+
+*** =right
+
+Or fine tune each element:
+```{r fig.width=6,fig.height=6}
+p + theme_bw(base_size = 24, base_family = "Times") +
+  theme(legend.title = element_text(size=20,color="blue"),# Legend title
+        legend.text = element_text(size=18,color="red"), # Legend text
+        axis.title.x = element_text(size=18,color="red"), # X axis label
+        axis.title.y = element_blank(), # Remove Y axis label
+        )
+```
+
+The ```element_blank()``` function can be used to remove undesired elements.
+
+---.class &twocol
+
+
+## Changing Legend Position
+
+*** =left
+
+```{r fig.width=6,fig.height=4}
+p + theme_bw(base_size = 24, base_family = "Times") +
+  theme(legend.position = "bottom")
+```
+
+*** =right
+
+```{r fig.width=6,fig.height=4}
+p + theme_bw(base_size = 24, base_family = "Times") +
+  theme(legend.position = c(0.9,0.1))
+```
+
+---.class
+
+## List of Theme Elements
+
+
+Elements that can be adjusted with the ```theme``` function:
+```{r, eval=F}
+theme(line, rect, text, title, aspect.ratio, axis.title, axis.title.x,
+  axis.title.x.top, axis.title.y, axis.title.y.right, axis.text, axis.text.x,
+  axis.text.x.top, axis.text.y, axis.text.y.right, axis.ticks, axis.ticks.x,
+  axis.ticks.y, axis.ticks.length, axis.line, axis.line.x, axis.line.y,
+  legend.background, legend.margin, legend.spacing, legend.spacing.x,
+  legend.spacing.y, legend.key, legend.key.size, legend.key.height,
+  legend.key.width, legend.text, legend.text.align, legend.title,
+  legend.title.align, legend.position, legend.direction, legend.justification,
+  legend.box, legend.box.just, legend.box.margin, legend.box.background,
+  legend.box.spacing, panel.background, panel.border, panel.spacing,
+  panel.spacing.x, panel.spacing.y, panel.grid, panel.grid.major,
+  panel.grid.minor, panel.grid.major.x, panel.grid.major.y, panel.grid.minor.x,
+  panel.grid.minor.y, panel.ontop, plot.background, plot.title, plot.subtitle,
+  plot.caption, plot.margin, strip.background, strip.placement, strip.text,
+  strip.text.x, strip.text.y, strip.switch.pad.grid, strip.switch.pad.wrap, ...,
+  complete = FALSE, validate = TRUE)
+```
+
+---.class &twocol
+
+## Reset the default theme
+
+
+
+- The default them is ```theme_grey()```
+- Use ```theme_set()``` to change the default
+
+*** =left
+
+With old default:
+```{r fig.width=6,fig.height=4}
+p
+```
+
+*** =right
+
+With new default:
+```{r fig.width=6,fig.height=4}
+theme_set(theme_light())
+p
+```
+
+---.class
+
+## Creating Your Own Theme
+
+- You can create your own theme and reuse later:
+```{r create_own_them, fig.width=6,fig.height=4}
+mytheme <- theme_bw(base_size = 24, base_family = "Times") +
+  theme(legend.title = element_text(size=20,color="blue"),# Legend title
+        legend.text = element_text(size=18,color="red"), # Legend text
+        axis.title.x = element_text(size=18,color="red"), # X axis label
+        axis.title.y = element_blank(), # Remove Y axis label
+        )
+p + mytheme
+```
+
+---.class
+
+## Coordination systems
+
+
+- Functions that control the coordination system
+    - ```coord_cartesian``` - the default cartesian coordinates
+    - ```coord_flip``` - flip X and Y
+    - ```coord_polar``` - polar coordinates
+    - ```coord_trans``` - transform cartesian coordinates
+
+
+--- .class &twocol
+
+## Coordination systems
+
+```{r define_histogram, fig.width=6,fig.height=4}
+usage_pidept <- daily %>% 
+  group_by(PIDept) %>%
+  summarize(Total=sum(as.double(Total))) %>%
+  ggplot(aes(x=reorder(PIDept,-Total),y=Total)) + geom_col()
+```
+
+*** =left
+
+Original:
+```{r fig.width=6,fig.height=4}
+usage_pidept
+```
+
+
+*** =right
+
+With flipped coorinates:
+```{r fig.width=6,fig.height=4}
+usage_pidept + coord_flip()
+```
+
+---.class &twocol
+
+## Coordination systems
+
+*** =left
+
+Original:
+```{r fig.width=6,fig.height=4}
+usage_pidept 
+```
+
+*** =right
+
+With transformed Y coordinate:
+```{r fig.width=6,fig.height=4}
+usage_pidept + coord_trans(y="sqrt") 
+```
+
+---.class
+
+## Axis Limits
+
+- Use the ```xlim()``` and ```ylim()``` functions to set the range of axes:
+
+```{r axis_limits, fig.width=6,fig.height=4}
+monthlyusage + theme_light() +
+  xlim(as.Date("2016-12-15"),as.Date("2017-06-15")) +
+  ylim(0,90)
+```
+
+```{r interactive_axis_limits,cache=FALSE, echo=FALSE, eval=FALSE}
+shinyApp(
+  ui = fluidPage(
+    theme = shinytheme("readable"),
+    sidebarLayout(
+      sidebarPanel(
+    sliderInput("xlimlower",
+                label = "X Axis Lower Limit",
+                min = 0, max = 50,
+                value = 0),
+        sliderInput("xlimupper",
+                label = "X Axis Upper Limit",
+                min = 150, max = 200,
+                value = 175),
+        sliderInput("ylimlower",
+                label = "Y Axis Lower Limit",
+                min = 0, max = 100,
+                value = 50),
+        sliderInput("ylimupper",
+                label = "Y Axis Upper Limit",
+                min = 50, max = 150,
+                value = 75)
+      ),
+     mainPanel(plotOutput("xyPlot"))
+    )
+  ),
+  server = function(input, output) {
+    output$xyPlot <- renderPlot(
+      p + theme_light() + xlim(input$xlimlower,input$xlimupper) + ylim(input$ylimlower,input$ylimupper)
+    )
+  },
+  options = list(height=600)
+)
+```
+
+
+--- .class 
+
+## Scales
+
+- The ```scale_<aes>_(continuous|discrete|manual|identity|...)``` family of functions controls how data points are mapped to aesthetic values
+    - Color
+    - Shape
+    - Size
+    - Alpha (transparency)
+    - X and Y location
+
+
+---.class &twocol
+
+## X and Y scales
+
+*** =left
+
+* ```scale_x_continuous```: scale for X, which is a continuous variable
+
+```{r scale_x_continuous, fig.width=6,fig.height=4}
+p + theme_bw() +
+  ylim(50,100) +
+  scale_x_continuous(limits=c(0,200),
+                     breaks=c(50,110,170),
+                     labels=c("Thin","Medium\nSize","Chubby"))
+```
+
+*** =right
+
+* ```scale_x_log10```: base-10 logarithmic scale for X, which is a continuous variable
+
+```{r scale_x_log10, fig.width=6,fig.height=4}
+p + theme_economist_white() +
+  scale_x_log10(breaks=c(10,20,50,100,200),
+                limits=c(5,500)) + # Plot X on a log10 scale
+  scale_y_reverse() # Reverse the Y scale
+```
+
+---.class &twocol
+
+## Legend Labels
+
+- Scale functions can be used to customize legend labels
+    - Color, shape, size, fill etc.
+
+*** =left
+
+Original Boxplot:
+```{r box_plot_original, fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=drv,y=cty,fill=drv)) +
+  geom_boxplot()
+```
+
+
+*** =right
+
+* Use ```scale_fill_discrete``` function to modify legend labels:
+
+```{r box_plot_modified, fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=drv,y=cty,fill=drv)) +
+  geom_boxplot() +
+  scale_fill_discrete(limits=4,labels="Drive Type 1")
+```
+
+
+```{r box_plot_interactive,cache=FALSE, echo=FALSE, eval=FALSE}
+bp <- ggplot(mpg,aes(x=drv,y=cty,fill=drv)) +
+  geom_boxplot()
+dts <- c("Four Wheel Drive", "Front Drive", "Rear Drive")
+names(dts) <- c("4","f","r")
+shinyApp(
+  ui = fluidPage(
+    theme = shinytheme("readable"),
+    sidebarLayout(
+      sidebarPanel(
+        helpText(h3("Valid input: 4, f, r")),
+        textInput("dt1",
+                  label = "Drive Type 1",
+                  value = "4"
+                  ),
+        textInput("dt2",
+                  label = "Drive Type 2",
+                  value = "f"
+                  ),
+        textInput("dt3",
+                  label = "Drive Type 3",
+                  value = "r"
+                  )
+        ),
+     mainPanel(
+       textOutput("code"),
+       plotOutput("xyPlot")
+       )
+    )
+  ),
+  server = function(input, output) {
+    output$code <- renderText({
+      c(
+        "ggplot(mpg,aes(x=drv,y=cty,fill=drv)) +
+        geom_boxplot() +
+        scale_fill_discrete(limits=c('",input$dt1,"','",input$dt2,"','",input$dt3,
+        "'),labels=c('",dts[input$dt1],"','",dts[input$dt2],"','",dts[input$dt3],"'))"
+      )
+    })
+    output$xyPlot <- renderPlot(
+      bp + scale_fill_discrete(limits=c(input$dt1,input$dt2,input$dt3),
+                               labels=c(dts[input$dt1],dts[input$dt2],dts[input$dt3]))
+    )
+  },
+  options = list(width=800, height=600)
+)
+```
+
+---.class &twocol
+
+## Other scales
+
+
+*** =left
+
+By default:
+```{r scales_before, fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=displ,y=hwy,size=cyl,color=drv, alpha=cty)) +
+  geom_point()
+```
+
+
+*** =right
+
+Re-scaled
+```{r scales_after, fig.width=6,fig.height=4}
+ggplot(mpg,aes(x=displ,y=hwy,size=cyl,color=drv, alpha=cty)) +
+  geom_point() +
+  scale_size_identity() + # Use the values of "cyl" variable for size
+  scale_color_manual(values=c("darkblue","rosybrown2","#24FA22")) +
+  scale_alpha_continuous(range=c(0.1,1))
+```
+
+---.class &twocol
+
+## Faceting
+
+
+*** =left
+
+- Facets divide a plot into subplots based on the values of one or more discrete variables.
+- Faceting in ```ggplot2``` is managed by the functions ```facet_grid``` and ```facet_wrap```.
+
+
+*** =right
+
+```facet_grid```: create a row of panels defined by the variable "drv":
+```{r facet_grid_drv, fig.width=6,fig.height=4}
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_point() +
+  facet_grid(. ~ drv)
+```
+
+---.class 
+
+## Facet_grid
+
+
+```facet_grid```: creates a column of panels defined by the variable "fl":
+```{r facet_grid_fl, fig.width=6,fig.height=4}
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_point() +
+  facet_grid(fl ~ .)
+```
+
+---.class
+
+## Facet_grid
+
+
+
+```facet_grid```: creates a matrix of panels defined by the variables "fl" and "drv":
+```{r facet_grid_both, fig.width=6,fig.height=4}
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_point() +
+  facet_grid(fl ~ drv)
+```
+
+---.class
+
+## Facet_wrap
+
+
+```facet_wrap```: wraps 1d sequence of panels into 2d:
+```{r facet_wrap, fig.width=6,fig.height=4, warnings=F}
+pideptusage <- daily %>%
+  group_by(Day, PIDept) %>%
+  summarize(Total=round(sum(as.double(Total)),2)) %>%
+  ggplot(aes(x=Day,y=Total,col=PIDept)) + geom_line() + facet_wrap(~PIDept)
+pideptusage
+q <- ggplot(mpg, aes(displ, hwy)) + 
+  geom_point() +
+  facet_wrap(~class, nrow=3)
+```
+
+---.class
+
+## Interactive Visualization
+
+- There are a few R packages that allow interactive visualization
+    - Plotly
+    - Rbokeh
+    - Leaflet
+    - Highcharter
+    - $$\cdots$$
+
+- Interactive visualization can be created/embeded in 
+    - Rstudio console 
+    - R Markdown reports 
+    - R Shiny web applications.
+
+
+
+---.class
+
+## Further Reading
+
+- Good cheat sheets are always welcome
+    - https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf
+    - http://zevross.com/blog/2014/08/04/beautiful-plotting-in-r-a-ggplot2-cheatsheet-3/
+- ```R Graphics Cookbook``` is a good reference
+- R documentation
+
+
+--- .class
+
+
+--- .class
+
+## Monthly Usage
+
+```{r}
+monthly <- daily %>% 
+  group_by(Month=floor_date(as.Date(Day), "month"),Name,Department,PI,PIDept,Status) %>% 
+  summarize(Serial=sum(as.double(Serial)),Single=sum(as.double(Single)),
+    Multi=sum(as.double(Multi)),Total=sum(as.double(Total)),
+    SerialJ=sum(as.double(SerialJ)),SingleJ=sum(as.double(SingleJ)),
+    MultiJ=sum(as.double(MultiJ)),TotalJ=sum(as.double(TotalJ)))
+p <- monthly %>% 
+  group_by(Month) %>%	
+  summarize(Total=round(sum(as.double(Total)),2),Jobs=round(sum(as.double(TotalJ)))) %>%
+  mutate(Available=ay1617su,Unused=Available-Total,Percent=round(Total/Available*100,2))
+p
+```
+
+--- .class &twocol
+
+## Bar Chart Monthly Usage
+
+*** =left
+
+```{r eval=FALSE}
+monthly %>% 
+  group_by(Month) %>%	
+  summarize(Total=round(sum(as.double(Total)),2),
+    Jobs=round(sum(as.double(TotalJ)))) %>%
+  mutate(Available=ay1617su,
+    Unused=Available-Total,
+    Percent=round(Total/Available*100,2)) %>%
+  ggplot(aes(Month,Percent)) + geom_col()
+```
+
+*** =right
+
+```{r echo=FALSE}
+p <- monthly %>% 
+  group_by(Month) %>%	
+  summarize(Total=round(sum(as.double(Total)),2),Jobs=round(sum(as.double(TotalJ)))) %>%
+  mutate(Available=ay1617su,Unused=Available-Total,Percent=round(Total/Available*100,2)) %>%
+  ggplot(aes(Month,Percent)) + geom_col()
+p
+```
+
+--- .class
+
+## Bar Chart
+
+```{r}
+theme_set(theme_bw())
+p + labs(title="Sol Usage", y="Percent", x="Month", caption="AY 2016-17")
+```
+
+--- .class &twocol
+
+## Chart
+
+*** =left
+
+```{r eval=FALSE}
+daily %>%
+#  filter(Department=="Biological Sciences") %>%
+  group_by(Day, PIDept) %>%
+  summarize(Total=round(sum(as.double(Total)),2),Jobs=round(sum(as.double(TotalJ)))) %>%
+  ggplot(aes(Day,Total)) + geom_line()
+
+```
+
+*** =right
+
+```{r echo=FALSE}
+p <- daily %>%
+  #filter(Department=="Biological Sciences" | Department=="Chemical Engineering" ) %>%
+  group_by(Day, PIDept) %>%
+  summarize(Total=round(sum(as.double(Total)),2),Jobs=round(sum(as.double(TotalJ)))) %>%
+  ggplot(aes(Day,Total)) + geom_line(aes(col = PIDept))
+p
+```
+
+--- .class
+
+## Facet Wrap
+
+```{r}
+p + facet_wrap( ~PIDept, scales = "free") 
+```
+
+
+
+
+
+
+
+
 
